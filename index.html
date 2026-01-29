@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TikTok Swipe Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body {
+      background: black;
+      color: white;
+      overflow: hidden;
+    }
+    .screen {
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .start {
+      text-align: center;
+    }
+    .start button {
+      padding: 12px 25px;
+      font-size: 18px;
+      border: none;
+      border-radius: 25px;
+      background: #ff0050;
+      color: white;
+      cursor: pointer;
+    }
+    .game {
+      display: none;
+      position: relative;
+      height: 100vh;
+      width: 100vw;
+      background: linear-gradient(#111, #000);
+    }
+    .score {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      font-size: 18px;
+    }
+    .time {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 18px;
+    }
+    .player {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 40px;
+    }
+    .item {
+      position: absolute;
+      top: -50px;
+      font-size: 30px;
+      animation: fall linear;
+    }
+    @keyframes fall {
+      from { top: -50px; }
+      to { top: 100vh; }
+    }
+    .over {
+      display: none;
+      text-align: center;
+    }
+    .over button {
+      padding: 10px 20px;
+      background: #ff0050;
+      border: none;
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="screen start" id="startScreen">
+    <h1>🎮 TikTok Swipe Game</h1>
+    <p>Swipe Left / Right to catch ❤️</p><br />
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div class="game" id="gameScreen">
+    <div class="score">Score: <span id="score">0</span></div>
+    <div class="time">Time: <span id="time">30</span>s</div>
+    <div class="player" id="player">🧍</div>
+  </div>
+
+  <div class="screen over" id="overScreen">
+    <h1>Game Over 😵</h1>
+    <p>Your Score: <span id="finalScore"></span></p><br />
+    <button onclick="location.reload()">Play Again</button>
+  </div>
+
+  <script>
+    let score = 0;
+    let time = 30;
+    let playerX = window.innerWidth / 2;
+    let gameInterval, timerInterval;
+
+    const startScreen = document.getElementById('startScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const overScreen = document.getElementById('overScreen');
+    const player = document.getElementById('player');
+
+    function startGame() {
+      startScreen.style.display = 'none';
+      gameScreen.style.display = 'block';
+
+      gameInterval = setInterval(createItem, 800);
+      timerInterval = setInterval(() => {
+        time--;
+        document.getElementById('time').innerText = time;
+        if (time <= 0) endGame();
+      }, 1000);
+    }
+
+    function createItem() {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.innerText = Math.random() > 0.3 ? '❤️' : '💣';
+      item.style.left = Math.random() * (window.innerWidth - 40) + 'px';
+      item.style.animationDuration = '3s';
+      gameScreen.appendChild(item);
+
+      const fallInterval = setInterval(() => {
+        const itemRect = item.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+
+        if (
+          itemRect.bottom > playerRect.top &&
+          itemRect.left < playerRect.right &&
+          itemRect.right > playerRect.left
+        ) {
+          if (item.innerText === '❤️') {
+            score++;
+          } else {
+            score = Math.max(0, score - 2);
+          }
+          document.getElementById('score').innerText = score;
+          item.remove();
+          clearInterval(fallInterval);
+        }
+
+        if (itemRect.top > window.innerHeight) {
+          item.remove();
+          clearInterval(fallInterval);
+        }
+      }, 50);
+    }
+
+    function endGame() {
+      clearInterval(gameInterval);
+      clearInterval(timerInterval);
+      gameScreen.style.display = 'none';
+      overScreen.style.display = 'flex';
+      document.getElementById('finalScore').innerText = score;
+    }
+
+    // Swipe / Touch controls
+    let startX = 0;
+    document.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+    document.addEventListener('touchmove', e => {
+      let diff = e.touches[0].clientX - startX;
+      playerX += diff;
+      playerX = Math.max(0, Math.min(window.innerWidth - 40, playerX));
+      player.style.left = playerX + 'px';
+      startX = e.touches[0].clientX;
+    });
+
+    // Keyboard support
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') playerX -= 30;
+      if (e.key === 'ArrowRight') playerX += 30;
+      playerX = Math.max(0, Math.min(window.innerWidth - 40, playerX));
+      player.style.left = playerX + 'px';
+    });
+  </script>
+</body>
+</html>
